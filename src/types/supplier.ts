@@ -51,7 +51,7 @@ export interface SupplierFormData {
   pan?: string;
   email?: string;
   phone: string;
-  address: Omit<SupplierAddress, 'id'>;
+  address: Omit<SupplierAddress, 'id'>[];
   contactPersons: Omit<ContactPerson, 'id'>[];
   bankDetails: Omit<BankDetails, 'id'>[];
   paymentTerms: string;

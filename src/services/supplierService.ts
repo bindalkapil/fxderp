@@ -11,15 +11,93 @@ declare const process: {
 const mockSuppliers: Supplier[] = [
   {
     id: '1',
-    name: 'ABC Suppliers',
+    name: 'ABC Electronics',
     code: 'SUP-001',
-    gstin: '22ABCDE1234F1Z5',
-    pan: 'ABCDE1234F',
-    email: 'contact@abcsuppliers.com',
+    gstin: '22AAAAA0000A1Z5',
+    pan: 'AAAAA1234A',
+    email: 'contact@abcelectronics.com',
     phone: '+919876543210',
     address: {
-      line1: '123 Industrial Area',
-      line2: 'Phase 2',
+      line1: '123 Tech Park',
+      line2: 'Sector 62',
+      city: 'Noida',
+      state: 'Uttar Pradesh',
+      country: 'India',
+      postalCode: '201309'
+    },
+    contactPersons: [
+      {
+        name: 'Rahul Sharma',
+        email: 'rahul@abcelectronics.com',
+        phone: '+919876543211',
+        designation: 'Sales Manager'
+      }
+    ],
+    bankDetails: [
+      {
+        accountName: 'ABC Electronics',
+        accountNumber: '1234567890',
+        bankName: 'HDFC Bank',
+        branch: 'Noida Sector 62',
+        ifscCode: 'HDFC0001234',
+        isPrimary: true
+      }
+    ],
+    paymentTerms: '30 Days',
+    creditLimit: 500000,
+    status: 'active',
+    createdAt: new Date('2024-01-15'),
+    updatedAt: new Date('2024-06-01'),
+    notes: 'Reliable supplier with good quality products'
+  },
+  {
+    id: '2',
+    name: 'XYZ Components',
+    code: 'SUP-002',
+    gstin: '27BBBBB0000B2Z6',
+    pan: 'BBBBB5678B',
+    email: 'info@xyzcomponents.com',
+    phone: '+919876543212',
+    address: {
+      line1: '456 Industrial Area',
+      city: 'Bangalore',
+      state: 'Karnataka',
+      country: 'India',
+      postalCode: '560068'
+    },
+    contactPersons: [
+      {
+        name: 'Priya Patel',
+        email: 'priya@xyzcomponents.com',
+        phone: '+919876543213',
+        designation: 'Account Manager'
+      }
+    ],
+    bankDetails: [
+      {
+        accountName: 'XYZ Components',
+        accountNumber: '9876543210',
+        bankName: 'ICICI Bank',
+        branch: 'Koramangala',
+        ifscCode: 'ICIC0001234',
+        isPrimary: true
+      }
+    ],
+    paymentTerms: '15 Days',
+    creditLimit: 300000,
+    status: 'active',
+    createdAt: new Date('2024-02-20'),
+    updatedAt: new Date('2024-05-25')
+  },
+  {
+    id: '3',
+    name: 'Global Hardware Solutions',
+    code: 'SUP-003',
+    gstin: '29CCCCC0000C3Z7',
+    pan: 'CCCCC9012C',
+    phone: '+919876543214',
+    address: {
+      line1: '789 Trade Center',
       city: 'Mumbai',
       state: 'Maharashtra',
       country: 'India',
@@ -27,26 +105,25 @@ const mockSuppliers: Supplier[] = [
     },
     contactPersons: [
       {
-        name: 'Rajesh Kumar',
-        email: 'rajesh@abcsuppliers.com',
-        phone: '+919876543211',
-        designation: 'Sales Manager'
+        name: 'Amit Kumar',
+        email: 'amit@globalhardware.com',
+        phone: '+919876543215',
+        designation: 'Director'
       }
     ],
     bankDetails: [
       {
-        accountName: 'ABC Suppliers',
-        accountNumber: '1234567890',
-        bankName: 'State Bank of India',
+        accountName: 'Global Hardware Solutions',
+        accountNumber: '4567890123',
+        bankName: 'SBI',
         branch: 'Nariman Point',
         ifscCode: 'SBIN0001234',
         isPrimary: true
       }
     ],
-    paymentTerms: 'Net 30',
-    status: 'active',
-    createdAt: new Date(),
-    updatedAt: new Date()
+    status: 'inactive',
+    createdAt: new Date('2023-11-10'),
+    updatedAt: new Date('2024-05-15')
   }
 ];
 

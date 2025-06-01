@@ -18,6 +18,8 @@ import Sales from './pages/sales/Sales.tsx';
 import Dispatch from './pages/dispatch/Dispatch.tsx';
 import Suppliers from './pages/suppliers/Suppliers.tsx';
 import AddSupplier from './pages/suppliers/AddSupplier.tsx';
+import EditSupplier from './pages/suppliers/EditSupplier';
+import ViewSupplier from './pages/suppliers/ViewSupplier.tsx';
 import Customers from './pages/customers/Customers.tsx';
 import Ledger from './pages/ledger/Ledger.tsx';
 import Reports from './pages/reports/Reports.tsx';
@@ -91,6 +93,8 @@ const App = () => {
                   <Route path="/suppliers">
                     <Route index element={<Suppliers />} />
                     <Route path="new" element={<AddSupplier />} />
+                    <Route path=":id" element={<ViewSupplier />} />
+                    <Route path=":id/edit" element={<EditSupplier />} />
                   </Route>
                   <Route path="/customers" element={<Customers />} />
                   

@@ -76,6 +76,14 @@ const Suppliers = () => {
     navigate('/suppliers/new');
   };
 
+  const handleEditClick = (id: string) => {
+    navigate(`/suppliers/${id}/edit`);
+  };
+
+  const handleViewClick = (id: string) => {
+    navigate(`/suppliers/${id}`);
+  };
+
   // Dummy supplier data
   const dummySuppliers: Supplier[] = [
     {
@@ -112,7 +120,7 @@ const Suppliers = () => {
           isPrimary: true
         }
       ],
-      paymentTerms: 'Net 30',
+      paymentTerms: '30 Days',
       creditLimit: 500000,
       status: 'active',
       createdAt: new Date('2024-01-15'),
@@ -152,7 +160,7 @@ const Suppliers = () => {
           isPrimary: true
         }
       ],
-      paymentTerms: 'Net 15',
+      paymentTerms: '15 Days',
       creditLimit: 300000,
       status: 'active',
       createdAt: new Date('2024-02-20'),
@@ -338,21 +346,21 @@ const Suppliers = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {paginatedSuppliers.map((supplier) => (
+              {paginatedSuppliers.map((row) => (
                 <TableRow
-                  key={supplier.id}
+                  key={row.id}
                   hover
-                  onContextMenu={(e) => handleContextMenu(e, supplier)}
+                  onContextMenu={(e) => handleContextMenu(e, row)}
                   sx={{ cursor: 'context-menu' }}
                 >
-                  <TableCell>{supplier.name}</TableCell>
-                  <TableCell>{supplier.code}</TableCell>
-                  <TableCell>{supplier.phone}</TableCell>
-                  <TableCell>{supplier.email}</TableCell>
+                  <TableCell>{row.name}</TableCell>
+                  <TableCell>{row.code}</TableCell>
+                  <TableCell>{row.phone}</TableCell>
+                  <TableCell>{row.email}</TableCell>
                   <TableCell>
                     <Chip
-                      label={supplier.status}
-                      color={statusColors[supplier.status]}
+                      label={row.status}
+                      color={statusColors[row.status]}
                       size="small"
                     />
                   </TableCell>
@@ -360,7 +368,7 @@ const Suppliers = () => {
                     <Tooltip title="View">
                       <IconButton
                         size="small"
-                        onClick={() => navigate(`/suppliers/${supplier.id}`)}
+                        onClick={() => handleViewClick(row.id)}
                       >
                         <VisibilityIcon fontSize="small" />
                       </IconButton>
@@ -368,7 +376,7 @@ const Suppliers = () => {
                     <Tooltip title="Edit">
                       <IconButton
                         size="small"
-                        onClick={() => navigate(`/suppliers/${supplier.id}/edit`)}
+                        onClick={() => handleEditClick(row.id)}
                       >
                         <EditIcon fontSize="small" />
                       </IconButton>
@@ -376,7 +384,7 @@ const Suppliers = () => {
                     <Tooltip title="Delete">
                       <IconButton
                         size="small"
-                        onClick={() => handleDeleteClick(supplier)}
+                        onClick={() => handleDeleteClick(row)}
                         color="error"
                       >
                         <DeleteIcon fontSize="small" />
