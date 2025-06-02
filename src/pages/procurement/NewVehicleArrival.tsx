@@ -13,8 +13,8 @@ import {
   InputLabel,
   Select,
   Autocomplete,
-  Checkbox,
-  FormControlLabel,
+  // Checkbox,
+  // FormControlLabel,
 } from '@mui/material';
 import { GridContainer, GridItem } from '../../components/CustomGrid';
 
@@ -317,16 +317,10 @@ const NewVehicleArrival = () => {
                   freeSolo
                   options={supplierOptions}
                   inputValue={formData.supplier}
-                  onInputChange={(
-                    event: React.SyntheticEvent<Element, Event>,
-                    newInputValue: string
-                  ) => {
+                  onInputChange={(_event: React.SyntheticEvent<Element, Event>, newInputValue: string) => {
                     setFormData(prev => ({ ...prev, supplier: newInputValue, supplierAddress: '' }));
                   }}
-                  onChange={(
-                    event: React.SyntheticEvent<Element, Event>,
-                    newValue: Supplier | string | null
-                  ) => {
+                  onChange={(_event: React.SyntheticEvent<Element, Event>, newValue: Supplier | string | null) => {
                     if (typeof newValue === 'string') {
                       setFormData(prev => ({ ...prev, supplier: newValue, supplierAddress: '' }));
                     } else if (newValue && typeof newValue === 'object') {

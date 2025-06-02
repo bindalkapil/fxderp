@@ -1,4 +1,4 @@
-import type { Supplier, SupplierFormData } from '../types/supplier';
+import type { Supplier, SupplierFormData, SupplierAddress } from '../types/supplier';
 
 // Define process.env types for TypeScript
 declare const process: {
@@ -171,16 +171,29 @@ export const supplierService = {
   // Create a new supplier
   async createSupplier(data: SupplierFormData): Promise<Supplier> {
     if (useMock) {
+      // Ensure address is a single object with required fields
+      const address: SupplierAddress = data.address && !Array.isArray(data.address) 
+        ? data.address 
+        : {
+            line1: '',
+            city: '',
+            state: '',
+            country: '',
+            postalCode: ''
+          };
+      
       const newSupplier: Supplier = {
         ...data,
         id: Math.random().toString(36).substr(2, 9),
         createdAt: new Date(),
         updatedAt: new Date(),
         contactPersons: data.contactPersons || [],
-        bankDetails: data.bankDetails || []
+        bankDetails: data.bankDetails || [],
+        address: address,
+        status: data.status || 'active' // Ensure status has a default value
       };
       mockSuppliers.push(newSupplier);
-      return new Promise(resolve => setTimeout(() => resolve(newSupplier), 500));
+      return new Promise<Supplier>(resolve => setTimeout(() => resolve(newSupplier), 500));
     }
 
     const response = await fetch(API_BASE_URL, {
@@ -201,14 +214,25 @@ export const supplierService = {
         return Promise.reject(new Error('Supplier not found'));
       }
       
-      const updatedSupplier = {
+      // Ensure address is properly handled
+      let updatedAddress = mockSuppliers[index].address;
+      if (data.address) {
+        updatedAddress = Array.isArray(data.address) 
+          ? data.address[0] 
+          : data.address;
+      }
+      
+      const updatedSupplier: Supplier = {
         ...mockSuppliers[index],
         ...data,
         updatedAt: new Date(),
+        address: updatedAddress,
+        contactPersons: data.contactPersons || mockSuppliers[index].contactPersons,
+        bankDetails: data.bankDetails || mockSuppliers[index].bankDetails
       };
       
       mockSuppliers[index] = updatedSupplier;
-      return new Promise(resolve => setTimeout(() => resolve(updatedSupplier), 500));
+      return new Promise<Supplier>(resolve => setTimeout(() => resolve(updatedSupplier), 500));
     }
 
     const response = await fetch(`${API_BASE_URL}/${id}`, {

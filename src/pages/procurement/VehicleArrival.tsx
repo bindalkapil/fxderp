@@ -2,31 +2,30 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Box,
-  Typography,
   Button,
+  Chip,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  FormControl,
+  Grid,
+  IconButton,
+  InputAdornment,
+  InputLabel,
+  MenuItem,
   Paper,
+  Select,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableHead,
-  TableRow,
-  Chip,
-  IconButton,
-  Tooltip,
-  TextField,
-  InputAdornment,
-  MenuItem,
-  Select,
-  FormControl,
-  InputLabel,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Grid,
   TablePagination,
-  type SelectChangeEvent,
+  TableRow,
+  TextField,
+  Tooltip,
+  Typography
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -37,8 +36,7 @@ import {
   LocalShipping as LocalShippingIcon,
   Cancel as CancelIcon,
   Edit as EditIcon,
-  Visibility as VisibilityIcon,
-  Refresh as RefreshIcon,
+  Visibility as VisibilityIcon
 } from '@mui/icons-material';
 import { format } from 'date-fns';
 
@@ -50,8 +48,7 @@ import type { VehicleArrival, VehicleArrivalStatus } from '../../types/vehicleAr
 
 // Services
 import {
-  getVehicleArrivals,
-  updateVehicleArrivalStatus,
+  getVehicleArrivals
 } from '../../services/vehicleArrivalService';
 
 // Status configuration
@@ -127,7 +124,7 @@ export function VehicleArrival() {
   });
 
   // Handle pagination
-  const handleChangePage = (event: unknown, newPage: number) => {
+  const handleChangePage = (_event: unknown, newPage: number) => {
     setPage(newPage);
   };
 
@@ -137,19 +134,9 @@ export function VehicleArrival() {
   };
 
   // Handle status filter change
-  const handleStatusFilterChange = (event: SelectChangeEvent<VehicleArrivalStatus | 'all'>) => {
-    setStatusFilter(event.target.value as VehicleArrivalStatus | 'all');
+  const handleStatusFilterChange = (event: any) => {
+    setStatusFilter(event.target.value);
     setPage(0);
-  };
-
-  // Handle status update
-  const handleStatusUpdate = async (id: string, status: VehicleArrivalStatus) => {
-    try {
-      await updateVehicleArrivalStatus(id, status);
-      await fetchArrivals();
-    } catch (error) {
-      console.error('Error updating status:', error);
-    }
   };
 
   // Handle view details
@@ -361,7 +348,7 @@ export function VehicleArrival() {
                   <Typography variant="subtitle1" gutterBottom>
                     <strong>Items</strong>
                   </Typography>
-                  {selectedArrival.items.map((item, idx) => (
+                  {selectedArrival.items.map((item) => (
                     <Box key={item.id} mb={2} p={2} sx={{ border: '1px solid #eee', borderRadius: 2 }}>
                       <Typography variant="body2" gutterBottom>
                         <strong>Product Category:</strong> {item.productCategory || '-'}
