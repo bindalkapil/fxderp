@@ -7,7 +7,7 @@ export default defineConfig(({ mode }) => {
   
   return {
     plugins: [react()],
-    base: mode === 'production' ? '/fxd-partner-app/' : '/',
+    base: mode === 'production' ? '/fxderp/' : '/',
     build: {
       outDir: 'dist',
     },
