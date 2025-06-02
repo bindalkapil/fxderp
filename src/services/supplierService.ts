@@ -129,8 +129,8 @@ const mockSuppliers: Supplier[] = [
 
 const API_BASE_URL = '/api/suppliers';
 
-// Check if we're in development mode and should use mock data
-const useMock = import.meta.env.DEV;
+// Always use mock data for GitHub Pages
+const useMock = true;
 
 // Helper function to handle responses
 const handleResponse = async (response: Response) => {
