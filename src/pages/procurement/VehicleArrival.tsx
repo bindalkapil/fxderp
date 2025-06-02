@@ -245,7 +245,7 @@ export function VehicleArrival() {
               <TableHead>
                 <TableRow>
                   <TableCell>Vehicle Number</TableCell>
-                  <TableCell>Driver Name</TableCell>
+                  <TableCell>Supplier</TableCell>
                   <TableCell>Arrival Time</TableCell>
                   <TableCell>Status</TableCell>
                   <TableCell>Actions</TableCell>
@@ -268,7 +268,7 @@ export function VehicleArrival() {
                   paginatedArrivals.map((arrival) => (
                     <TableRow key={arrival.id}>
                       <TableCell>{arrival.vehicleNumber}</TableCell>
-                      <TableCell>{arrival.driverName}</TableCell>
+                      <TableCell>{arrival.supplier}</TableCell>
                       <TableCell>
                         {format(new Date(arrival.actualArrival || arrival.estimatedArrival), 'PPpp')}
                       </TableCell>
@@ -314,23 +314,39 @@ export function VehicleArrival() {
         <Dialog
           open={dialogOpen}
           onClose={() => setDialogOpen(false)}
-          maxWidth="sm"
+          maxWidth="md"
           fullWidth
+          sx={{
+            '& .MuiDialog-paper': {
+              minWidth: 700,
+              maxWidth: '900px',
+            },
+          }}
         >
           <DialogTitle>Vehicle Arrival Details</DialogTitle>
           <DialogContent>
             {selectedArrival && (
               <Box>
                 <Typography variant="h6" gutterBottom>
-                  {selectedArrival.vehicleNumber}
+                  Vehicle: {selectedArrival.vehicleNumber}
                 </Typography>
                 <Typography variant="body1" gutterBottom>
-                  <strong>Driver:</strong> {selectedArrival.driverName}
+                  <strong>Driver:</strong> {selectedArrival.driverName} ({selectedArrival.driverPhone})
                 </Typography>
                 <Typography variant="body1" gutterBottom>
-                  <strong>Arrival Time:</strong>{' '}
-                  {format(new Date(selectedArrival.actualArrival || selectedArrival.estimatedArrival), 'PPpp')}
+                  <strong>Supplier:</strong> {selectedArrival.supplier}
+                  {selectedArrival.supplierReference && (
+                    <> (<strong>Ref:</strong> {selectedArrival.supplierReference})</>
+                  )}
                 </Typography>
+                <Typography variant="body1" gutterBottom>
+                  <strong>Estimated Arrival:</strong> {format(new Date(selectedArrival.estimatedArrival), 'PPpp')}
+                </Typography>
+                {selectedArrival.actualArrival && (
+                  <Typography variant="body1" gutterBottom>
+                    <strong>Actual Arrival:</strong> {format(new Date(selectedArrival.actualArrival), 'PPpp')}
+                  </Typography>
+                )}
                 <Typography variant="body1" gutterBottom>
                   <strong>Status:</strong> {renderStatusChip(selectedArrival.status)}
                 </Typography>
@@ -339,6 +355,70 @@ export function VehicleArrival() {
                     <strong>Notes:</strong> {selectedArrival.notes}
                   </Typography>
                 )}
+
+                {/* Items List */}
+                <Box mt={3}>
+                  <Typography variant="subtitle1" gutterBottom>
+                    <strong>Items</strong>
+                  </Typography>
+                  {selectedArrival.items.map((item, idx) => (
+                    <Box key={item.id} mb={2} p={2} sx={{ border: '1px solid #eee', borderRadius: 2 }}>
+                      <Typography variant="body2" gutterBottom>
+                        <strong>Product Category:</strong> {item.productCategory || '-'}
+                      </Typography>
+                      <Typography variant="body2" gutterBottom>
+                        <strong>Item Name:</strong> {item.itemName}
+                      </Typography>
+                      <Typography variant="body2" gutterBottom>
+                        <strong>Purchase Order ID:</strong> {item.purchaseOrderId}
+                      </Typography>
+                      <Typography variant="body2" gutterBottom>
+                        <strong>Quantity:</strong> {item.quantity} {item.unit}
+                      </Typography>
+                      <Typography variant="body2" gutterBottom>
+                        <strong>Received Quantity:</strong> {item.receivedQuantity ?? '-'}
+                      </Typography>
+                      <Typography variant="body2" gutterBottom>
+                        <strong>Status:</strong> {item.status}
+                      </Typography>
+                      {item.notes && (
+                        <Typography variant="body2" gutterBottom>
+                          <strong>Notes:</strong> {item.notes}
+                        </Typography>
+                      )}
+                      {/* SKUs Table */}
+                      {item.skus && item.skus.length > 0 && (
+                        <Box mt={1}>
+                          <Typography variant="subtitle2" gutterBottom>
+                            SKUs
+                          </Typography>
+                          <Table size="small">
+                            <TableHead>
+                              <TableRow>
+                                <TableCell>SKU</TableCell>
+                                <TableCell>Quantity</TableCell>
+                                <TableCell>Unit</TableCell>
+                                <TableCell>Unit Wt</TableCell>
+                                <TableCell>Total Wt</TableCell>
+                              </TableRow>
+                            </TableHead>
+                            <TableBody>
+                              {item.skus.map((sku, skuIdx) => (
+                                <TableRow key={skuIdx}>
+                                  <TableCell>{sku.sku}</TableCell>
+                                  <TableCell>{sku.quantity}</TableCell>
+                                  <TableCell>{sku.unit}</TableCell>
+                                  <TableCell>{sku.unitWt ?? '-'}</TableCell>
+                                  <TableCell>{sku.totalWt ?? '-'}</TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </Box>
+                      )}
+                    </Box>
+                  ))}
+                </Box>
               </Box>
             )}
           </DialogContent>

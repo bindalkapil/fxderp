@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -12,9 +12,11 @@ import {
   FormControl,
   InputLabel,
   Select,
+  Autocomplete,
+  Checkbox,
+  FormControlLabel,
 } from '@mui/material';
 import { GridContainer, GridItem } from '../../components/CustomGrid';
-
 
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
@@ -22,7 +24,18 @@ import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { createVehicleArrival } from '../../services/vehicleArrivalService';
+import { supplierService } from '../../services/supplierService';
 import type { VehicleArrivalFormData } from '../../types/vehicleArrival';
+import type { Supplier } from '../../types/supplier';
+import { productCategories } from './productsData';
+import type { ProductCategory } from './productsData';
+
+const ARRIVAL_STAGES = [
+  { label: 'In Transit', value: 'in_transit' },
+  { label: 'Arrived', value: 'arrived' },
+  { label: 'Unloading', value: 'unloading' },
+  { label: 'Unloaded', value: 'unloaded' },
+];
 
 const NewVehicleArrival = () => {
   const navigate = useNavigate();
@@ -31,12 +44,27 @@ const NewVehicleArrival = () => {
     driverName: '',
     driverPhone: '',
     supplier: '',
-    supplierReference: '',
+    supplierAddress: '',
     estimatedArrival: new Date(),
     items: [
-      { purchaseOrderId: '', itemName: '', quantity: 1, unit: 'pieces' }
+      {
+        productCategory: '',
+        itemName: '',
+        skus: [
+          { sku: '', quantity: 1, unit: 'Box/Crate' }
+        ],
+        purchaseOrderId: ''
+      },
     ],
+    status: 'in_transit',
     notes: '',
+  });
+  const [supplierOptions, setSupplierOptions] = useState<Supplier[]>([]);
+
+  useEffect(() => {
+    supplierService.getSuppliers().then(suppliers => {
+      setSupplierOptions(suppliers.filter(s => s.status === 'active'));
+    });
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -57,26 +85,69 @@ const NewVehicleArrival = () => {
     }
   };
 
-  const handleItemChange = (index: number, field: keyof VehicleArrivalFormData['items'][0], value: string | number) => {
+  // For changing product-level fields (category, name)
+  const handleItemChange = (
+    index: number,
+    field: keyof VehicleArrivalFormData['items'][0],
+    value: any
+  ) => {
     const updatedItems = [...formData.items];
     updatedItems[index] = {
       ...updatedItems[index],
-      [field]: value
+      [field]: value,
     };
     setFormData(prev => ({
       ...prev,
-      items: updatedItems
+      items: updatedItems,
     }));
   };
 
+  // For changing SKU-level fields
+  const handleSkuChange = (
+    productIndex: number,
+    skuIndex: number,
+    field: keyof VehicleArrivalFormData['items'][0]['skus'][0],
+    value: any
+  ) => {
+    const updatedItems = [...formData.items];
+    updatedItems[productIndex].skus[skuIndex] = {
+      ...updatedItems[productIndex].skus[skuIndex],
+      [field]: value,
+    };
+    setFormData(prev => ({ ...prev, items: updatedItems }));
+  };
+
+  // Add a new product
   const addItem = () => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       items: [
         ...prev.items,
-        { purchaseOrderId: '', itemName: '', quantity: 1, unit: 'pieces' }
+        {
+          purchaseOrderId: '',
+          productCategory: '',
+          itemName: '',
+          skus: [
+            { sku: '', quantity: 1, unit: 'Box/Crate', unitWt: undefined, totalWt: undefined }
+          ],
+          
+        },
       ]
     }));
+  };
+
+  // Add a new SKU to a product
+  const addSku = (productIndex: number) => {
+    const updatedItems = [...formData.items];
+    updatedItems[productIndex].skus.push({ sku: '', quantity: 1, unit: 'Box/Crate', unitWt: undefined, totalWt: undefined });
+    setFormData(prev => ({ ...prev, items: updatedItems }));
+  };
+
+  // Remove a SKU from a product
+  const removeSku = (productIndex: number, skuIndex: number) => {
+    const updatedItems = [...formData.items];
+    updatedItems[productIndex].skus = updatedItems[productIndex].skus.filter((_, i) => i !== skuIndex);
+    setFormData(prev => ({ ...prev, items: updatedItems }));
   };
 
   const removeItem = (index: number) => {
@@ -110,18 +181,22 @@ const NewVehicleArrival = () => {
       newErrors.estimatedArrival = 'Estimated arrival time is required';
     }
 
-    // Validate items
+    // Validate products
     formData.items.forEach((item, index) => {
       if (!item.purchaseOrderId.trim()) {
         newErrors[`items[${index}].purchaseOrderId`] = 'PO Number is required';
       }
       if (!item.itemName.trim()) {
-        newErrors[`items[${index}].itemName`] = 'Item name is required';
+        newErrors[`items[${index}].itemName`] = 'Product name is required';
       }
-      if (item.quantity <= 0) {
+      // SKU validation
+      if (!item.skus || item.skus.length === 0 || !item.skus[0].sku) {
+        newErrors[`items[${index}].skus`] = 'SKU is required';
+      }
+      if ((item.quantity ?? 0) <= 0) {
         newErrors[`items[${index}].quantity`] = 'Quantity must be greater than 0';
       }
-      if (!item.unit.trim()) {
+      if (!item.unit || !item.unit.trim()) {
         newErrors[`items[${index}].unit`] = 'Unit is required';
       }
     });
@@ -156,6 +231,7 @@ const NewVehicleArrival = () => {
           
           <form onSubmit={handleSubmit}>
             <GridContainer style={{ margin: -12 }}>
+
               {/* Vehicle Information */}
               <GridItem xs={12}>
                 <Typography variant="h6" gutterBottom>
@@ -236,16 +312,79 @@ const NewVehicleArrival = () => {
               </GridItem>
 
               <GridItem xs={12} md={6}>
-                <TextField
+                <Autocomplete
                   fullWidth
-                  label="Supplier Name"
-                  name="supplier"
-                  value={formData.supplier}
-                  onChange={handleInputChange}
-                  error={!!errors.supplier}
-                  helperText={errors.supplier}
-                  required
+                  freeSolo
+                  options={supplierOptions}
+                  inputValue={formData.supplier}
+                  onInputChange={(
+                    event: React.SyntheticEvent<Element, Event>,
+                    newInputValue: string
+                  ) => {
+                    setFormData(prev => ({ ...prev, supplier: newInputValue, supplierAddress: '' }));
+                  }}
+                  onChange={(
+                    event: React.SyntheticEvent<Element, Event>,
+                    newValue: Supplier | string | null
+                  ) => {
+                    if (typeof newValue === 'string') {
+                      setFormData(prev => ({ ...prev, supplier: newValue, supplierAddress: '' }));
+                    } else if (newValue && typeof newValue === 'object') {
+                      // Handle address auto-selection
+                      let addresses = Array.isArray(newValue.address) ? newValue.address : [newValue.address];
+                      let selectedAddress = '';
+                      if (addresses.length === 1) {
+                        selectedAddress = JSON.stringify(addresses[0]);
+                      } else if (addresses.length > 1) {
+                        // Prefer primary address if available, else first
+                        const primary = addresses.find(addr => addr.isPrimary);
+                        selectedAddress = JSON.stringify(primary || addresses[0]);
+                      }
+                      setFormData(prev => ({ ...prev, supplier: newValue.name, supplierAddress: selectedAddress }));
+                    } else {
+                      setFormData(prev => ({ ...prev, supplier: '', supplierAddress: '' }));
+                    }
+                  }}
+                  getOptionLabel={(option: Supplier | string) =>
+                    typeof option === 'string' ? option : option.name
+                  }
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      label="Supplier Name"
+                      error={!!errors.supplier}
+                      helperText={errors.supplier}
+                      required
+                    />
+                  )}
                 />
+              </GridItem>
+
+              {/* Supplier Address Dropdown */}
+              <GridItem xs={12} md={6}>
+                <FormControl fullWidth disabled={!supplierOptions.find(s => s.name === formData.supplier)}>
+                  <InputLabel id="supplier-address-label">Supplier Address</InputLabel>
+                  <Select
+                    labelId="supplier-address-label"
+                    label="Supplier Address"
+                    value={formData.supplierAddress || ''}
+                    onChange={e => setFormData(prev => ({ ...prev, supplierAddress: e.target.value }))}
+                  >
+                    {(() => {
+                      const selectedSupplier = supplierOptions.find(s => s.name === formData.supplier);
+                      if (!selectedSupplier) return null;
+                      // If address is an array, map all; else, map the single address
+                      const addresses = Array.isArray(selectedSupplier.address)
+                        ? selectedSupplier.address
+                        : [selectedSupplier.address];
+                      return addresses.map((addr, idx) => (
+                        <MenuItem key={idx} value={JSON.stringify(addr)}>
+                          {`${addr.line1}, ${addr.line2 ? addr.line2 + ', ' : ''}${addr.city}, ${addr.state}, ${addr.country} - ${addr.postalCode}`}
+                        </MenuItem>
+                      ));
+                    })()}
+                  </Select>
+                </FormControl>
               </GridItem>
 
               <GridItem xs={12} md={6}>
@@ -258,104 +397,202 @@ const NewVehicleArrival = () => {
                 />
               </GridItem>
 
-              {/* Items */}
+              {/* Products */}
               <GridItem xs={12}>
                 <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-                  <Typography variant="h6">Items</Typography>
+                  <Typography variant="h6">Products</Typography>
                   <Button
                     variant="outlined"
                     startIcon={<AddIcon />}
                     onClick={addItem}
                   >
-                    Add Item
+                    Add Product
                   </Button>
                 </Box>
                 <Divider sx={{ mb: 2 }} />
 
-                {formData.items.map((item, index) => (
-                  <Box key={index} sx={{ mb: 3, p: 2, border: '1px solid #e0e0e0', borderRadius: 1 }}>
+                {formData.items.map((item, productIndex) => (
+                  <Box key={productIndex} sx={{ mb: 3, p: 2, border: '1px solid #e0e0e0', borderRadius: 1 }}>
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                       <Box display="flex" justifyContent="space-between" alignItems="center">
-                        <Typography variant="subtitle1">Item {index + 1}</Typography>
+                        <Typography variant="subtitle1">Product {productIndex + 1}</Typography>
                         {formData.items.length > 1 && (
                           <IconButton
                             color="error"
-                            onClick={() => removeItem(index)}
+                            onClick={() => removeItem(productIndex)}
                             size="small"
                           >
                             <DeleteIcon />
                           </IconButton>
                         )}
                       </Box>
-
-
                       <GridContainer style={{ margin: -8 }}>
-                        <GridItem xs={12} md={6}>
-                          <TextField
+                        <GridItem xs={12} md={3}>
+                          <Autocomplete
                             fullWidth
-                            label="PO Number"
-                            value={item.purchaseOrderId}
-                            onChange={(e) => handleItemChange(index, 'purchaseOrderId', e.target.value)}
-                            error={!!errors[`items[${index}].purchaseOrderId`]}
-                            helperText={errors[`items[${index}].purchaseOrderId`]}
-                            required
+                            options={productCategories.map((p: ProductCategory) => p.category)}
+                            value={item.productCategory || ''}
+                            onChange={(_, newValue) => handleItemChange(productIndex, 'productCategory', newValue || '')}
+                            renderInput={(params) => (
+                              <TextField
+                                {...params}
+                                label="Product Category"
+                                required
+                              />
+                            )}
                           />
                         </GridItem>
-
-                        <GridItem xs={12} md={6}>
-                          <TextField
+                        <GridItem xs={12} md={3}>
+                          <Autocomplete
                             fullWidth
-                            label="Item Name"
-                            value={item.itemName}
-                            onChange={(e) => handleItemChange(index, 'itemName', e.target.value)}
-                            error={!!errors[`items[${index}].itemName`]}
-                            helperText={errors[`items[${index}].itemName`]}
-                            required
+                            options={
+                              (productCategories.find((cat: ProductCategory) => cat.category === item.productCategory)?.products || [])
+                            }
+                            getOptionLabel={(option) => typeof option === 'string' ? option : option.name}
+                            value={
+                              (productCategories.find((cat: ProductCategory) => cat.category === item.productCategory)?.products.find(p => p.name === item.itemName)) || null
+                            }
+                            onChange={(_, newValue) => handleItemChange(productIndex, 'itemName', newValue ? (typeof newValue === 'string' ? newValue : newValue.name) : '')}
+                            renderInput={(params) => (
+                              <TextField
+                                {...params}
+                                label="Product Name"
+                                required
+                                error={!!errors[`items[${productIndex}].itemName`]}
+                                helperText={errors[`items[${productIndex}].itemName`] && errors[`items[${productIndex}].itemName`].replace('Item', 'Product')}
+                              />
+                            )}
                           />
-                        </GridItem>
-
-                        <GridItem xs={6} md={3}>
-                          <TextField
-                            fullWidth
-                            type="number"
-                            label="Quantity"
-                            value={item.quantity}
-                            onChange={(e) => handleItemChange(index, 'quantity', parseFloat(e.target.value) || 0)}
-                            error={!!errors[`items[${index}].quantity`]}
-                            helperText={errors[`items[${index}].quantity`]}
-                            required
-                            inputProps={{
-                              min: 0.01,
-                              step: 0.01
-                            }}
-                          />
-                        </GridItem>
-
-                        <GridItem xs={6} md={3}>
-                          <FormControl fullWidth>
-                            <InputLabel id={`unit-label-${index}`}>Unit</InputLabel>
-                            <Select
-                              labelId={`unit-label-${index}`}
-                              value={item.unit}
-                              label="Unit"
-                              onChange={(e) => handleItemChange(index, 'unit', e.target.value)}
-                              error={!!errors[`items[${index}].unit`]}
-                              required
-                            >
-                              <MenuItem value="pieces">Pieces</MenuItem>
-                              <MenuItem value="kg">Kilograms</MenuItem>
-                              <MenuItem value="g">Grams</MenuItem>
-                              <MenuItem value="l">Liters</MenuItem>
-                              <MenuItem value="ml">Milliliters</MenuItem>
-                              <MenuItem value="m">Meters</MenuItem>
-                              <MenuItem value="cm">Centimeters</MenuItem>
-                              <MenuItem value="boxes">Boxes</MenuItem>
-                              <MenuItem value="packs">Packs</MenuItem>
-                              <MenuItem value="units">Units</MenuItem>
-                            </Select>
-                          </FormControl>
                         </GridItem>
                       </GridContainer>
+                      <Box mt={2}>
+                        <Typography variant="subtitle2">SKUs</Typography>
+                        {item.skus.map((skuObj, skuIndex) => (
+                          <GridContainer key={skuIndex} style={{ margin: -8, marginBottom: 8 }}>
+                            <GridItem xs={12} md={3}>
+                              <Autocomplete
+                                fullWidth
+                                options={
+                                  (
+                                    productCategories
+                                      .find((cat: ProductCategory) => cat.category === item.productCategory)?.products
+                                      .find((p) => p.name === item.itemName)?.skus || []
+                                  )
+                                }
+                                value={skuObj.sku || ''}
+                                onChange={(_, newValue) => handleSkuChange(productIndex, skuIndex, 'sku', newValue || '')}
+                                renderInput={(params) => (
+                                  <TextField
+                                    {...params}
+                                    label="SKU / Size"
+                                    required
+                                    error={!!errors[`items[${productIndex}].skus[${skuIndex}].sku`]}
+                                    helperText={errors[`items[${productIndex}].skus[${skuIndex}].sku`]}
+                                  />
+                                )}
+                              />
+                            </GridItem>
+                            <GridItem xs={12} md={2}>
+                              <Autocomplete
+                                fullWidth
+                                options={['Box/Crate','kgs']}
+                                value={skuObj.unit || ''}
+                                onChange={(_, newValue) => handleSkuChange(productIndex, skuIndex, 'unit', newValue || '')}
+                                renderInput={(params) => (
+                                  <TextField
+                                    {...params}
+                                    label="Unit"
+                                    required
+                                    error={!!errors[`items[${productIndex}].skus[${skuIndex}].unit`]}
+                                    helperText={errors[`items[${productIndex}].skus[${skuIndex}].unit`]}
+                                  />
+                                )}
+                              />
+                            </GridItem>
+                            {/* Quantity always after Unit */}
+                            {skuObj.unit === 'kgs' ? (
+                              <>
+                                <GridItem xs={12} md={2}>
+                                  <TextField
+                                    fullWidth
+                                    type="number"
+                                    label="Quantity (Kgs)"
+                                    value={skuObj.quantity ?? ''}
+                                    onChange={e => {
+                                      handleSkuChange(productIndex, skuIndex, 'quantity', Number(e.target.value));
+                                      handleSkuChange(productIndex, skuIndex, 'totalWt', Number(e.target.value)); // Keep totalWt in sync for kgs
+                                    }}
+                                    required
+                                    inputProps={{ min: 0 }}
+                                  />
+                                </GridItem>
+                                <GridItem xs={12} md={2}>
+                                  <TextField
+                                    fullWidth
+                                    type="number"
+                                    label="Total Wt (Kgs)"
+                                    value={skuObj.quantity ?? ''}
+                                    InputProps={{ readOnly: true }}
+                                  />
+                                </GridItem>
+                              </>
+                            ) : (
+                              <GridItem xs={12} md={2}>
+                                <TextField
+                                  fullWidth
+                                  type="number"
+                                  label="Quantity"
+                                  value={skuObj.quantity ?? ''}
+                                  onChange={e => handleSkuChange(productIndex, skuIndex, 'quantity', Number(e.target.value))}
+                                  required
+                                  inputProps={{ min: 0 }}
+                                />
+                              </GridItem>
+                            )}
+                            {/* Unit-specific fields */}
+                            {skuObj.unit === 'Box/Crate' && (
+  <>
+    <GridItem xs={12} md={2}>
+      <TextField
+        fullWidth
+        type="number"
+        label="Unit Wt"
+        value={skuObj.unitWt ?? ''}
+        onChange={e => handleSkuChange(productIndex, skuIndex, 'unitWt', Number(e.target.value))}
+        required
+        inputProps={{ min: 0 }}
+      />
+    </GridItem>
+    <GridItem xs={12} md={2}>
+      <TextField
+        fullWidth
+        type="number"
+        label="Total Wt"
+        value={skuObj.unitWt && skuObj.quantity ? skuObj.unitWt * skuObj.quantity : ''}
+        InputProps={{ readOnly: true }}
+      />
+    </GridItem>
+  </>
+)}
+                            
+                            <GridItem xs={12} md={1}>
+                              {item.skus.length > 1 && (
+                                <IconButton color="error" onClick={() => removeSku(productIndex, skuIndex)} size="small">
+                                  <DeleteIcon />
+                                </IconButton>
+                              )}
+                            </GridItem>
+                          </GridContainer>
+                        ))}
+                        <Button
+                          variant="outlined"
+                          startIcon={<AddIcon />}
+                          onClick={() => addSku(productIndex)}
+                          sx={{ mt: 1 }}
+                        >
+                          Add SKU
+                        </Button>
+                      </Box>
                     </Box>
                   </Box>
                 ))}
@@ -374,6 +611,22 @@ const NewVehicleArrival = () => {
                 />
               </GridItem>
 
+              {/* Arrival Stage Dropdown (Moved to Bottom) */}
+              <GridItem xs={12} md={4}>
+                <FormControl fullWidth required>
+                  <InputLabel id="arrival-stage-label">Arrival Stage</InputLabel>
+                  <Select
+                    labelId="arrival-stage-label"
+                    label="Arrival Stage"
+                    value={formData.status || 'in_transit'}
+                    onChange={e => setFormData(prev => ({ ...prev, status: e.target.value }))}
+                  >
+                    {ARRIVAL_STAGES.map(stage => (
+                      <MenuItem key={stage.value} value={stage.value}>{stage.label}</MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </GridItem>
               {/* Form Actions */}
               <GridItem xs={12}>
                 <Box display="flex" justifyContent="flex-end" gap={2}>

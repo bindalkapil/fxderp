@@ -20,12 +20,23 @@ export interface VehicleItem {
   id: string;
   purchaseOrderId: string;
   itemName: string;
-  quantity: number;
-  unit: string;
+  productCategory?: string;
+  skus: {
+    sku: string;
+    quantity: number;
+    unit: string;
+    unitWt?: number;
+    totalWt?: number;
+  }[];
+  // Optional top-level quantity and unit for form compatibility
+  quantity?: number;
+  unit?: string;
   receivedQuantity?: number;
   status: 'pending' | 'partially_received' | 'received' | 'rejected';
   notes?: string;
 }
+
+export type VehicleArrivalStage = 'in_transit' | 'arrived' | 'unloading' | 'unloaded' | 'returned' | 'cancelled';
 
 export interface VehicleArrivalFormData {
   vehicleNumber: string;
@@ -35,5 +46,7 @@ export interface VehicleArrivalFormData {
   supplierReference?: string;
   estimatedArrival: Date;
   items: Omit<VehicleItem, 'id' | 'status' | 'receivedQuantity'>[];
+  status: VehicleArrivalStage;
   notes?: string;
+  supplierAddress?: string; // stringified SupplierAddress JSON
 }
